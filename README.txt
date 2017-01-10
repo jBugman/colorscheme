@@ -1,0 +1,1 @@
+Experiments with converting an image to the predefined color palette
