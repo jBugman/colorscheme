@@ -27,7 +27,8 @@ main = do
 processImage :: FilePath -> IO ()
 processImage path = do
   wheel <- loadImage "wheel.png"
-  let palette = preparePalette wheel
+  -- let palette = preparePalette wheel
+  palette <- preparePalette' wheel
   image <- loadImage path
   -- print $ nearestPaletteColor palette (PixelRGB8 0 42 0)
   let result = mapDynamicImage palette image
@@ -43,13 +44,23 @@ loadImage path = do
 
 type ColorWheelPalette = [PixelRGB8]
 
--- preparePalette' :: Image PixelRGB8 -> Int -> Int -> [PixelRGB8]
+preparePalette' :: DynamicImage -> IO ColorWheelPalette
+preparePalette' (ImageRGB8 image@(Image w h _)) = do
+  let mainColors = L.filter (\(_, x) -> (x > 3000) && (x < 30000)) colorsWithCounts
+  let palette = (map (head . fst) mainColors) ++ [PixelRGB8 0 0 0, PixelRGB8 127 127 127, PixelRGB8 255 255 255] -- adding black, grey, and grey
+  print palette
+  return palette
+  where
+    colorsWithCounts = map (\x->([head x], length x)) . L.group . L.sort $ allPixels
+    allPixels = map (\(x, y) -> pixelAt image x y) allCoords :: ColorWheelPalette
+    allCoords = [(x, y) | x <- [0..w-1], y <- [0..h-1]]
+
 preparePalette :: DynamicImage -> ColorWheelPalette
 preparePalette (ImageRGB8 image@(Image w h _)) =
   Set.toList $ Set.fromList allPixels
     where
-      allCoords = [(x, y) | x <- [0..w-1], y <- [0..h-1]]
       allPixels = map (\(x, y) -> pixelAt image x y) allCoords
+      allCoords = [(x, y) | x <- [0..w-1], y <- [0..h-1]]
 
 preparePalette _ = error "Unsupported image format"
 
@@ -69,7 +80,7 @@ convertCCtoJC :: PixelRGB8 -> Colour Double
 convertCCtoJC pixel@(PixelRGB8 r g b) = sRGB24 r g b
 
 mapDynamicImage :: ColorWheelPalette -> DynamicImage -> DynamicImage
-mapDynamicImage palette source = ImageRGB8 $ pixelMap (nearestPaletteColor $ take 3 palette) rgb8image
+mapDynamicImage palette source = ImageRGB8 $ pixelMap (nearestPaletteColor palette) rgb8image
   where
     rgb8image = case source of
       (ImageRGB8 image) -> image
