@@ -1,9 +1,8 @@
-#!/usr/bin/env stack
--- stack --install-ghc runghc --package JuicyPixels --package colour
-
 {-# LANGUAGE OverloadedStrings #-}
+module Colorscheme (
+  processImage
+) where
 
-import System.Environment
 import qualified Data.ByteString as B
 import Codec.Picture
 import Data.Set (Set)
@@ -16,13 +15,7 @@ import Data.Word (Word8)
 import qualified Data.List as L
 import Data.Ord (comparing)
 
-
-main :: IO ()
-main = do
-  args <- getArgs
-  case args of
-    [path] -> processImage path
-    _ -> putStrLn "Please provide a path"
+type ColorWheelPalette = [PixelRGB8]
 
 processImage :: FilePath -> IO ()
 processImage path = do
@@ -41,8 +34,6 @@ loadImage path = do
   case eimg of
     Left err -> error ("Could not read image: " ++ err)
     Right img -> return img
-
-type ColorWheelPalette = [PixelRGB8]
 
 preparePalette' :: DynamicImage -> IO ColorWheelPalette
 preparePalette' (ImageRGB8 image@(Image w h _)) = do

@@ -1,0 +1,46 @@
+name:                colorscheme
+version:             0.1.0.0
+synopsis:            Experiments with converting an image to the predefined color palette
+description:         Please see README.txt
+homepage:            https://github.com/jBugman/colorscheme#readme
+license:             MIT
+license-file:        LICENSE.txt
+author:              Sergey Parshukov
+maintainer:          codedby@bugman.me
+copyright:           2017 Sergey Parshukov
+category:            Tools, Image Processing
+build-type:          Simple
+-- extra-source-files:  README.txt
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Colorscheme
+  build-depends:       base >= 4.7 && < 5
+                     , bytestring >= 0.10
+                     , containers >= 0.5
+                     , vector >= 0.11
+                     , JuicyPixels >= 3.2
+                     , colour >= 2.3
+  default-language:    Haskell2010
+
+executable app
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , colorscheme
+  default-language:    Haskell2010
+
+test-suite colorscheme-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , colorscheme
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/jBugman/colorscheme
