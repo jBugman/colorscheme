@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Colorscheme (
-  processImage
-) where
+module Colorscheme (processImage) where
 
 import qualified Data.ByteString as B
 import Codec.Picture
@@ -38,19 +36,19 @@ loadImage path = do
 preparePalette' :: DynamicImage -> IO ColorWheelPalette
 preparePalette' (ImageRGB8 image@(Image w h _)) = do
   let mainColors = L.filter (\(_, x) -> (x > 3000) && (x < 30000)) colorsWithCounts
-  let palette = (map (head . fst) mainColors) ++ [PixelRGB8 0 0 0, PixelRGB8 127 127 127, PixelRGB8 255 255 255] -- adding black, grey, and grey
+  let palette = map (head . fst) mainColors ++ [PixelRGB8 0 0 0, PixelRGB8 127 127 127, PixelRGB8 255 255 255] -- adding black, grey, and grey
   print palette
   return palette
   where
     colorsWithCounts = map (\x->([head x], length x)) . L.group . L.sort $ allPixels
-    allPixels = map (\(x, y) -> pixelAt image x y) allCoords :: ColorWheelPalette
+    allPixels = map (uncurry (pixelAt image)) allCoords :: ColorWheelPalette
     allCoords = [(x, y) | x <- [0..w-1], y <- [0..h-1]]
 
 preparePalette :: DynamicImage -> ColorWheelPalette
 preparePalette (ImageRGB8 image@(Image w h _)) =
   Set.toList $ Set.fromList allPixels
     where
-      allPixels = map (\(x, y) -> pixelAt image x y) allCoords
+      allPixels = map (uncurry (pixelAt image)) allCoords
       allCoords = [(x, y) | x <- [0..w-1], y <- [0..h-1]]
 
 preparePalette _ = error "Unsupported image format"
