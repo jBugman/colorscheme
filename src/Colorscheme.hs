@@ -22,10 +22,9 @@ processImage path = do
   -- print palette
   let palette' = fmap convertJCtoCC palette
   -- print palette'
-  let colorDistance' = colorDistance convertJCtoCC id
+  let colorDistance' = colorDistance (toLAB . convertJCtoCC) toLAB
   let nearestPaletteColor' = nearestPaletteColor convertCCtoJC colorDistance'
   let result = mapDynamicImage nearestPaletteColor' palette' image
-  -- let result = mapDynamicImage palette image
   savePngImage "out.png" result
   putStrLn "done"
 
@@ -45,11 +44,11 @@ type Ccolor = Colour Double
 type JCcolor = PixelRGB8
 type LABcolor = (Double, Double, Double)
 
-cie76 :: Ccolor -> Ccolor -> Double
-cie76 c1 c2 = sqrt $ (l2 - l1)^2 + (a2 - a1)^2 + (b2 - b1)^2
-  where
-    (l1, a1, b1) = toLAB c1
-    (l2, a2, b2) = toLAB c2
+cie76 :: LABcolor -> LABcolor -> Double
+cie76 (l1, a1, b1) (l2, a2, b2) = sqrt $ (l2 - l1)^2 + (a2 - a1)^2 + (b2 - b1)^2
+
+-- cie76' :: Ccolor -> Ccolor -> Double
+-- cie76' c1 c2 = cie76 (toLAB c1) (toLAB c2)
 
 toLAB :: Ccolor -> LABcolor
 toLAB = cieLABView Data.Colour.CIE.Illuminant.d65
@@ -71,5 +70,5 @@ nearestPaletteColor conversionToJC distanceF palette c = conversionToJC pixel
       pixel = snd $ L.minimumBy (comparing fst) distances
       distances = map (\x -> (distanceF c x, x)) palette
 
-colorDistance :: (a -> Ccolor)-> (b -> Ccolor) -> a -> b -> Double
+colorDistance :: (a -> LABcolor)-> (b -> LABcolor) -> a -> b -> Double
 colorDistance convX convY x y = cie76 (convX x) (convY y)
