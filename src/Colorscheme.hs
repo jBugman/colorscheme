@@ -2,8 +2,8 @@
 module Colorscheme (processImage) where
 
 import Codec.Picture
-import Data.Colour.CIE
-import Data.Colour.SRGB
+import Data.Colour.CIE (cieLABView, cieLAB)
+import Data.Colour.SRGB (Colour, RGB(..), sRGB24, toSRGB24)
 import Data.Ord (comparing)
 import Data.Set (Set)
 import Data.Word (Word8)
@@ -18,13 +18,17 @@ processImage :: FilePath -> IO ()
 processImage path = do
   wheel <- loadImage "wheel.png"
   image <- loadImage path
-  let palette = Palette.fromImage wheel
-  -- print palette
-  let palette' = fmap convertJCtoCC palette
-  -- print palette'
-  let colorDistance' = colorDistance (toLAB . convertJCtoCC) toLAB
-  let nearestPaletteColor' = nearestPaletteColor convertCCtoJC colorDistance'
-  let result = mapDynamicImage nearestPaletteColor' palette' image
+  
+  let convertJCtoLAB = convertCCtoLAB . convertJCtoCC
+  let convertLABtoJC = convertCCtoJC . convertLABtoCC
+  
+  let paletteJC = Palette.fromImage wheel
+  let palette = fmap convertJCtoLAB paletteJC
+
+  let distanceF = colorDistance convertJCtoLAB id
+  let searchF = nearestPaletteColor convertLABtoJC distanceF
+  let paletteSearch = searchF palette
+  let result = mapDynamicImage paletteSearch image
   savePngImage "out.png" result
   putStrLn "done"
 
@@ -47,11 +51,11 @@ type LABcolor = (Double, Double, Double)
 cie76 :: LABcolor -> LABcolor -> Double
 cie76 (l1, a1, b1) (l2, a2, b2) = sqrt $ (l2 - l1)^2 + (a2 - a1)^2 + (b2 - b1)^2
 
--- cie76' :: Ccolor -> Ccolor -> Double
--- cie76' c1 c2 = cie76 (toLAB c1) (toLAB c2)
+convertCCtoLAB :: Ccolor -> LABcolor
+convertCCtoLAB = cieLABView Data.Colour.CIE.Illuminant.d65
 
-toLAB :: Ccolor -> LABcolor
-toLAB = cieLABView Data.Colour.CIE.Illuminant.d65
+convertLABtoCC :: LABcolor -> Ccolor
+convertLABtoCC (l, a, b) = cieLAB Data.Colour.CIE.Illuminant.d65 l a b
 
 convertJCtoCC :: JCcolor -> Ccolor
 convertJCtoCC pixel@(PixelRGB8 r g b) = sRGB24 r g b
@@ -61,10 +65,10 @@ convertCCtoJC c = PixelRGB8 r g b
   where
     (RGB r g b) = toSRGB24 c
 
-mapDynamicImage :: ([p] -> JCcolor -> JCcolor) -> [p] -> DynamicImage -> DynamicImage
-mapDynamicImage paletteSearch palette (ImageRGB8 image) = ImageRGB8 $ pixelMap (paletteSearch palette) image
+mapDynamicImage :: (JCcolor -> JCcolor) -> DynamicImage -> DynamicImage
+mapDynamicImage paletteSearch (ImageRGB8 image) = ImageRGB8 $ pixelMap paletteSearch image
 
-nearestPaletteColor :: (p -> JCcolor) -> (JCcolor -> p -> Double) -> [p] -> JCcolor -> JCcolor
+nearestPaletteColor :: (a -> JCcolor) -> (JCcolor -> a -> Double) -> [a] -> JCcolor -> JCcolor
 nearestPaletteColor conversionToJC distanceF palette c = conversionToJC pixel
     where
       pixel = snd $ L.minimumBy (comparing fst) distances
