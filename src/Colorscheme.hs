@@ -5,13 +5,8 @@ import Codec.Picture
 import Data.Colour.CIE (cieLABView, cieLAB)
 import Data.Colour.SRGB (Colour, RGB(..), sRGB24, toSRGB24)
 import Data.Ord (comparing)
-import Data.Set (Set)
-import Data.Word (Word8)
-import qualified Data.ByteString as B
 import qualified Data.Colour.CIE.Illuminant
 import qualified Data.List as L
-import qualified Data.Set as Set
-import qualified Data.Vector.Storable as V
 import qualified Palette
 
 processImage :: FilePath -> IO ()
@@ -49,7 +44,9 @@ type JCcolor = PixelRGB8
 type LABcolor = (Double, Double, Double)
 
 cie76 :: LABcolor -> LABcolor -> Double
-cie76 (l1, a1, b1) (l2, a2, b2) = sqrt $ (l2 - l1)^2 + (a2 - a1)^2 + (b2 - b1)^2
+cie76 (l1, a1, b1) (l2, a2, b2) = sqrt $ sq (l2 - l1) + sq (a2 - a1) + sq (b2 - b1)
+  where
+    sq x =  x ^ (2::Int)
 
 convertCCtoLAB :: Ccolor -> LABcolor
 convertCCtoLAB = cieLABView Data.Colour.CIE.Illuminant.d65
@@ -58,7 +55,7 @@ convertLABtoCC :: LABcolor -> Ccolor
 convertLABtoCC (l, a, b) = cieLAB Data.Colour.CIE.Illuminant.d65 l a b
 
 convertJCtoCC :: JCcolor -> Ccolor
-convertJCtoCC pixel@(PixelRGB8 r g b) = sRGB24 r g b
+convertJCtoCC (PixelRGB8 r g b) = sRGB24 r g b
 
 convertCCtoJC :: Ccolor -> JCcolor
 convertCCtoJC c = PixelRGB8 r g b
@@ -67,6 +64,7 @@ convertCCtoJC c = PixelRGB8 r g b
 
 mapDynamicImage :: (JCcolor -> JCcolor) -> DynamicImage -> DynamicImage
 mapDynamicImage paletteSearch (ImageRGB8 image) = ImageRGB8 $ pixelMap paletteSearch image
+mapDynamicImage _ _ = error "Unsupported image type" -- should not match due to enforceRGB8
 
 nearestPaletteColor :: (a -> JCcolor) -> (JCcolor -> a -> Double) -> [a] -> JCcolor -> JCcolor
 nearestPaletteColor conversionToJC distanceF palette c = conversionToJC pixel
