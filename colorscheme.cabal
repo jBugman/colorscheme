@@ -22,6 +22,7 @@ library
                      , containers >= 0.5
                      , vector >= 0.11
                      , JuicyPixels >= 3.2
+                     , JuicyPixels-scale-dct >= 0.1
                      , colour >= 2.3
   default-language:    Haskell2010
 

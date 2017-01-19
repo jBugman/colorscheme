@@ -2,6 +2,7 @@
 module Colorscheme (processImage) where
 
 import Codec.Picture
+import Codec.Picture.ScaleDCT (scale)
 import Data.Colour.CIE (cieLABView, cieLAB)
 import Data.Colour.SRGB (Colour, RGB(..), sRGB24, toSRGB24)
 import Data.Ord (comparing)
@@ -12,7 +13,8 @@ import qualified Palette
 processImage :: FilePath -> IO ()
 processImage path = do
   wheel <- loadImage "wheel.png"
-  image <- loadImage path
+  originalImage <- loadImage path
+  let image = smartScale originalImage
   
   let convertJCtoLAB = convertCCtoLAB . convertJCtoCC
   let convertLABtoJC = convertCCtoJC . convertLABtoCC
@@ -34,10 +36,21 @@ loadImage path = do
     Left err -> error ("Could not read image: " ++ err)
     Right img -> return . ImageRGB8 $ enforceRGB8 img
 
--- forces DynamicImage to ImageRGB8
+-- |Forces DynamicImage to ImageRGB8
 enforceRGB8 :: DynamicImage -> Image PixelRGB8
 enforceRGB8 (ImageRGB8 image) = image
 enforceRGB8 otherFormat       = convertRGB8 otherFormat
+
+smartScale :: DynamicImage -> DynamicImage
+smartScale image = ImageRGB8 $ convertRGB8 $ ImageRGBA8 $ scale (w, h) irgba
+  where
+    h = floor (k * fromIntegral w)
+    k = fromIntegral originalH / fromIntegral originalW :: Float
+    w = min maxW originalW
+    originalW = imageWidth irgba
+    originalH = imageHeight irgba
+    irgba = convertRGBA8 image
+    maxW = 250
 
 type Ccolor = Colour Double
 type JCcolor = PixelRGB8
