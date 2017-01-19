@@ -6,6 +6,7 @@ import qualified Data.List as L
 
 type Colors = [PixelRGB8]
 
+rgb :: Pixel8 -> Pixel8 -> Pixel8 -> PixelRGB8
 rgb = PixelRGB8
 
 -- white, gray and black colors 
@@ -31,9 +32,10 @@ fromImage (ImageRGB8 image@(Image w h _)) = map (head . fst) mainColors ++ monoc
     colorsWithCounts = countItems allPixels
     allPixels = map (uncurry (pixelAt image)) allCoords
     allCoords = [(x, y) | x <- [0..w-1], y <- [0..h-1]]
+fromImage _ = error "Unsupported image type"
 
 
-countItems :: (Eq a, Ord a) => [a] -> [([a], Int)]
+countItems :: (Ord a) => [a] -> [([a], Int)]
 countItems = fmap counter . L.group . L.sort
   where
     counter x = ([head x], length x)
