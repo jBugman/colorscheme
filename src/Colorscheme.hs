@@ -12,14 +12,15 @@ import qualified Palette
 
 processImage :: FilePath -> IO ()
 processImage path = do
-  wheel <- loadImage "wheel.png"
+  -- wheel <- loadImage "wheel.png"
   originalImage <- loadImage path
   let image = smartScale originalImage
   
   let convertJCtoLAB = convertCCtoLAB . convertJCtoCC
   let convertLABtoJC = convertCCtoJC . convertLABtoCC
   
-  let paletteJC = Palette.fromImage wheel
+  -- let paletteJC = Palette.fromImage wheel
+  let paletteJC = Palette.extended
   let palette = fmap convertJCtoLAB paletteJC
 
   let distanceF = colorDistance convertJCtoLAB id
@@ -50,7 +51,7 @@ smartScale image = ImageRGB8 $ convertRGB8 $ ImageRGBA8 $ scale (w, h) irgba
     originalW = imageWidth irgba
     originalH = imageHeight irgba
     irgba = convertRGBA8 image
-    maxW = 250
+    maxW = 220
 
 type Ccolor = Colour Double
 type JCcolor = PixelRGB8
