@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Colorscheme (processImage) where
 
 import Codec.Picture
